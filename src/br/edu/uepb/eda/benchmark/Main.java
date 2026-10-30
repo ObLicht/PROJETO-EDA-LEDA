@@ -56,7 +56,7 @@ public class Main {
     static class Estatistica {
         final String algoritmo, cenario, tipo;
         final int tamanho;
-        final double media, desvio, min, max;
+        final double media, mediana, desvio, min, max;
 
         Estatistica(String algoritmo, String cenario, String tipo, int tamanho, double[] ns) {
             this.algoritmo = algoritmo;
@@ -72,6 +72,19 @@ public class Main {
             this.media = soma / ns.length;
             double q = 0;
             for (double v : ns) q += (v - media) * (v - media);
+
+            // Calcular a mediana
+            double[] ordenados = ns.clone();
+            Arrays.sort(ordenados);
+
+            int meio = ordenados.length / 2;
+
+            if (ordenados.length % 2 == 0) {
+            this.mediana = (ordenados[meio - 1] + ordenados[meio]) / 2.0;
+            } else {
+            this.mediana = ordenados[meio];
+            }
+
             this.desvio = ns.length > 1 ? Math.sqrt(q / (ns.length - 1)) : 0;
             this.min = mn;
             this.max = mx;
@@ -180,8 +193,10 @@ public class Main {
                     }
                     Estatistica est = new Estatistica(e.getKey(), cenario.name(), "ordenacao", n, tempos);
                     out.add(est);
-                    System.out.printf(Locale.US, "  %-28s media = %12.3f ms  (dp %10.3f | min %10.3f | max %10.3f)%n",
-                            est.algoritmo, est.media / 1e6, est.desvio / 1e6, est.min / 1e6, est.max / 1e6);
+                    System.out.printf(Locale.US,
+                    "  %-28s media = %12.3f ms | mediana = %12.3f ms (dp %10.3f | min %10.3f | max %10.3f)%n",
+                    est.algoritmo, est.media / 1e6, est.mediana / 1e6,
+                    est.desvio / 1e6, est.min / 1e6, est.max / 1e6);
                 }
                 System.out.println();
             }
@@ -241,8 +256,10 @@ public class Main {
                 }
                 Estatistica est = new Estatistica(e.getKey(), "ORDENADO", "busca", n, tempos);
                 out.add(est);
-                System.out.printf(Locale.US, "  %-20s media = %12.3f us/busca  (dp %9.3f | min %9.3f | max %9.3f)  [reps=%d]%n",
-                        est.algoritmo, est.media / 1e3, est.desvio / 1e3, est.min / 1e3, est.max / 1e3, reps);
+                System.out.printf(Locale.US,
+                "  %-20s media = %12.3f us/busca | mediana = %12.3f us/busca (dp %9.3f | min %9.3f | max %9.3f) [reps=%d]%n",
+                est.algoritmo, est.media / 1e3, est.mediana / 1e3,
+                est.desvio / 1e3, est.min / 1e3, est.max / 1e3, reps);
             }
             System.out.println();
         }
@@ -255,14 +272,15 @@ public class Main {
     /** Ordenacao em ms; busca em us por busca (coluna 'unidade'). */
     static void salvarCsv(List<Estatistica> resultados) throws IOException {
         try (PrintWriter pw = new PrintWriter(arquivoCsv, "UTF-8")) {
-            pw.println("tipo,algoritmo,tamanho,cenario,unidade,media,desvio_padrao,minimo,maximo");
+            pw.println("tipo,algoritmo,tamanho,cenario,unidade,media,mediana,desvio_padrao,minimo,maximo");
             for (Estatistica e : resultados) {
                 boolean ord = e.tipo.equals("ordenacao");
                 double div = ord ? 1e6 : 1e3;
                 String un = ord ? "ms" : "us_por_busca";
-                pw.printf(Locale.US, "%s,\"%s\",%d,%s,%s,%.6f,%.6f,%.6f,%.6f%n",
-                        e.tipo, e.algoritmo, e.tamanho, e.cenario, un,
-                        e.media / div, e.desvio / div, e.min / div, e.max / div);
+                pw.printf(Locale.US, "%s,\"%s\",%d,%s,%s,%.6f,%.6f,%.6f,%.6f,%.6f%n",
+                    e.tipo, e.algoritmo, e.tamanho, e.cenario, un,
+                    e.media / div, e.mediana / div, e.desvio / div,
+                    e.min / div, e.max / div);
             }
         }
     }
