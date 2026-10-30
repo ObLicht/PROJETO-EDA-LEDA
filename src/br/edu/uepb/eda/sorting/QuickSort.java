@@ -6,7 +6,8 @@ import java.util.Random;
  * QuickSort sobre int[] em duas versoes (Arrays.sort(int[]) e usado direto
  * como referencia, sem implementacao propria):
  *
- * VERSAO SLIDE: pivo = ultimo elemento, particao de Lomuto.
+ * VERSAO SLIDE: pivo = primeiro elemento (A[esq]), particao "a la Hoare"
+ * conforme o slide de Quick Sort (EDA-05).
  *   - Medio caso O(n log n).
  *   - Pior caso O(n^2) com vetor ja ordenado ou inverso: o pivo sempre cai
  *     na borda, a particao fica desbalanceada e a PROFUNDIDADE DA RECURSAO
@@ -43,22 +44,31 @@ public class QuickSort {
 
     private static void quickSort(int[] arr, int esq, int dir) {
         if (esq >= dir) return;
-        int p = particionarLomuto(arr, esq, dir);
+        int p = particionar(arr, esq, dir);
         quickSort(arr, esq, p - 1);
         quickSort(arr, p + 1, dir);
     }
 
-    private static int particionarLomuto(int[] arr, int esq, int dir) {
-        int pivo = arr[dir];
-        int i = esq - 1;
-        for (int j = esq; j < dir; j++) {
-            if (arr[j] <= pivo) {
+    /**
+     * PARTITION do slide: pivo = A[esq]; i avanca sobre elementos <= pivo,
+     * j recua sobre elementos > pivo; quando ambos param, troca A[i] e A[j].
+     * No fim, coloca o pivo na posicao final (j) e retorna essa posicao.
+     */
+    private static int particionar(int[] arr, int esq, int dir) {
+        int p = arr[esq];
+        int i = esq + 1;
+        int j = dir;
+        while (i <= j) {
+            if (arr[i] <= p) {
                 i++;
+            } else if (arr[j] > p) {
+                j--;
+            } else {
                 swap(arr, i, j);
             }
         }
-        swap(arr, i + 1, dir);
-        return i + 1;
+        swap(arr, esq, j);
+        return j;
     }
 
     private static void shuffle(int[] arr) {
