@@ -1,0 +1,10 @@
+out/
+bin/
+*.class
+resultados*.csv
+resultados*.json
+.idea/
+*.iml
+.classpath
+.project
+.settings/
