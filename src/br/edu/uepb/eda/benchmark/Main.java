@@ -41,7 +41,7 @@ public class Main {
     static final int EXECUCOES = 25;
     static final int WARMUP = 5;
 
-    // Tamanhos padrao (ver README: quadraticos inviaveis em 150k/500k)
+    // Tamanhos padrao
     static int[] tamanhosOrdenacao = {5_000, 15_000, 50_000};
     static int[] tamanhosBusca = {50_000, 150_000, 500_000};
     static String arquivoCsv = "resultados.csv";
