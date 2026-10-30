@@ -1,86 +1,108 @@
-# EDA / LEDA 2026.2 — Projeto da Unidade 1
-Análise de algoritmos de busca e ordenação em Java, exclusivamente com `int[]`
-(valores em [1, 100.000], repetições permitidas).
+# Análise de Algoritmos de Busca e Ordenação
+
+Projeto da Unidade 1 de EDA/LEDA 2026.2 (UEPB). Implementação e benchmark de algoritmos de
+ordenação e busca em Java, usando apenas `int[]` com valores em [1, 100.000] (repetições permitidas).
 
 ## Estrutura
 
 ```
-src/br/edu/uepb/eda/
+src/main/java/br/edu/uepb/eda/
+├── Main.java                   # Executa todo o experimento
 ├── sorting/
-│   ├── BubbleSort.java       sortSlide, sortOtimizado
-│   ├── SelectionSort.java    sortSlide, sortEstavel
-│   ├── InsertionSort.java    sort
-│   ├── MergeSort.java        sortClassico
-│   ├── QuickSort.java        sortSlide, sortShuffle
-│   └── CountingSort.java     sort
+│   ├── BubbleSort.java         # Slide + Otimizado
+│   ├── SelectionSort.java      # Slide + Estável
+│   ├── InsertionSort.java
+│   ├── MergeSort.java          # Clássico
+│   ├── QuickSort.java          # Slide + Slide com Shuffle
+│   └── CountingSort.java
 ├── search/
-│   └── SearchAlgorithms.java linearIterativa, linearRecursiva, linearDuasPontas,
-│                             binariaIterativa, binariaRecursiva
-├── util/
-│   ├── Cenario.java          ALEATORIO, ORDENADO, INVERSO, PARCIALMENTE_ORDENADO
-│   ├── DataGenerator.java    gerar(cenario, n), copyOf(int[]), ALVO_AUSENTE
-│   └── Verificador.java      estaOrdenado(int[])
-└── benchmark/                (a ser criado: Main com as medições)
+│   └── SearchAlgorithms.java   # Buscas lineares (3) e binárias (2)
+└── util/
+    ├── Cenario.java            # ALEATORIO, ORDENADO, INVERSO, PARCIALMENTE_ORDENADO
+    ├── DataGenerator.java      # Geração dos vetores de cada cenário
+    └── Verificador.java        # Confere se o vetor ficou ordenado
 ```
 
-`Arrays.sort(int[])` é a referência da biblioteca padrão e é chamado direto no
-benchmark, sem implementação própria.
+`Arrays.sort(int[])` entra no benchmark como referência da biblioteca padrão (sem implementação própria).
 
-## Compilar
+## Como compilar
 
 Linux/macOS:
 ```
-javac -d out $(find src -name "*.java")
+javac -d out $(find src/main/java -name "*.java")
 ```
 Windows (PowerShell):
 ```
-javac -d out (Get-ChildItem -Recurse src -Filter *.java).FullName
+javac -d out (Get-ChildItem -Recurse src/main/java -Filter *.java).FullName
 ```
 
-## Para quem vai escrever o Main (pacote `benchmark`)
+## Como executar
 
-Pedidos do enunciado que o `Main` precisa cumprir:
+```
+java -cp out br.edu.uepb.eda.Main
+```
 
-- Medir com `System.nanoTime()` (não é JMH).
-- 3 tamanhos de vetor, **os mesmos para todas as ordenações**; 4 cenários.
-- 25 execuções por combinação (algoritmo × tamanho × cenário); as 5 primeiras são
-  warm-up e **não entram** nas estatísticas (média, desvio, mín., máx. das 20 restantes).
-- Gerar o vetor mestre uma vez por (tamanho, cenário) e passar
-  `DataGenerator.copyOf(mestre)` a cada execução. Nunca reaproveitar saída ordenada.
-- Cronometrar só a chamada do algoritmo. A cópia e a verificação
-  (`Verificador.estaOrdenado`) ficam fora do tempo.
-- Buscas: vetor ordenado (`DataGenerator.ordenado(n)`), alvo `DataGenerator.ALVO_AUSENTE` (-1).
-  Como cada busca dura microssegundos, vale repetir a busca dentro de cada execução
-  cronometrada e dividir pelo número de repetições.
-- Incluir `Arrays.sort(int[])` como referência na comparação de ordenação.
+Opções:
 
-Exemplo de uso:
+| Opção | O que faz | Padrão |
+|---|---|---|
+| `--ord=a,b,c` | tamanhos dos vetores nas ordenações | `5000,15000,50000` |
+| `--busca=a,b,c` | tamanhos dos vetores nas buscas | `50000,150000,500000` |
+| `--csv=arquivo.csv` | arquivo de saída | `resultados.csv` |
+| `--rapido` | teste rápido com tamanhos pequenos (só para validar) | - |
+
+Exemplo:
+```
+java -cp out br.edu.uepb.eda.Main --ord=2000,6000,20000 --csv=meus_resultados.csv
+```
+
+## Metodologia
+
+- Tempo medido com `System.nanoTime()`.
+- 25 execuções por combinação (algoritmo × tamanho × cenário). As 5 primeiras são warm-up e
+  **não entram** nas estatísticas; média, desvio padrão, mínimo e máximo são das 20 restantes.
+- 4 cenários: aleatório, ordenado, inverso e parcialmente ordenado (vetor ordenado com ~15% das
+  posições sorteadas e embaralhadas entre si).
+- O vetor original é gerado uma vez por (tamanho, cenário), com semente fixa (42), e cada execução
+  recebe uma **cópia** dele. Nenhum algoritmo recebe a saída ordenada de outro.
+- Só a chamada do algoritmo é cronometrada. A cópia e a verificação de correção ficam fora do tempo.
+- **Buscas:** vetor ordenado e alvo `-1` (ausente). Como cada busca dura micro/nanossegundos, cada
+  execução repete a busca várias vezes e o resultado é o tempo **por busca**.
+
+## Tamanhos usados (e por que foram reduzidos)
+
+| Experimento | Tamanhos |
+|---|---|
+| Ordenação | 5.000 / 15.000 / 50.000 |
+| Busca | 50.000 / 150.000 / 500.000 |
+
+O enunciado sugere 50.000 / 150.000 / 500.000, mas permite ajustar os tamanhos quando o tempo de
+execução inviabiliza os experimentos. Nos algoritmos O(n²) (Bubble, Selection e Insertion), multiplicar
+n por 10 multiplica o tempo por ~100, e cada combinação roda 25 vezes em 4 cenários. Com 150.000 e
+500.000 elementos a execução ficou longa demais, então as **ordenações** foram reduzidas para 1/10 do
+sugerido, mantendo a proporção 1 : 3 : 10 e os mesmos tamanhos para todos os algoritmos. As **buscas**
+(O(n) e O(log n)) mantiveram os tamanhos originais.
+
+### Como alterar os tamanhos
+
+Pela linha de comando, sem recompilar:
+```
+java -cp out br.edu.uepb.eda.Main --ord=2000,6000,20000 --busca=20000,60000,200000
+```
+Ou mudando os valores padrão no início do `Main.java`:
 ```java
-int[] mestre = DataGenerator.gerar(Cenario.PARCIALMENTE_ORDENADO, 50_000);
-
-int[] arr = DataGenerator.copyOf(mestre);
-long t0 = System.nanoTime();
-MergeSort.sortClassico(arr);
-long dt = System.nanoTime() - t0;          // tempo do algoritmo apenas
-
-if (!Verificador.estaOrdenado(arr)) throw new IllegalStateException("nao ordenou");
+static int[] tamanhosOrdenacao = {5_000, 15_000, 50_000};
+static int[] tamanhosBusca     = {50_000, 150_000, 500_000};
 ```
+Dicas: use sempre 3 tamanhos, mantenha a proporção ~1 : 3 : 10, e lembre que o tempo dos algoritmos
+O(n²) cresce com o quadrado de n (dobrar n quadruplica o tempo).
 
-### Atenção à pilha (StackOverflowError)
+## Observações
 
-- `QuickSort.sortSlide` em vetor **ordenado ou inverso** tem recursão de profundidade n
-  (testado: estoura com n = 50.000 na pilha padrão).
-- `SearchAlgorithms.linearRecursiva` tem profundidade n.
-
-Rode com `-Xss512m`:
-```
-java -Xss512m -cp out br.edu.uepb.eda.benchmark.Main
-```
-ou execute o benchmark dentro de uma `Thread` criada com pilha grande.
-
-### Tamanhos
-
-Medições aproximadas de uma execução em vetor aleatório (n = 50.000): BubbleSort ≈ 3,7 s,
-SelectionSort ≈ 0,7 s (estável ≈ 1,5 s), InsertionSort ≈ 0,16 s. Com 25 execuções × 4 cenários,
-os quadráticos ficam inviáveis em 150.000 e 500.000. Sugestão: 5.000 / 15.000 / 50.000 para
-as ordenações (justificar na metodologia do relatório) e 50.000 / 150.000 / 500.000 para as buscas.
+- **Pilha:** `QuickSort (slide)` em vetor ordenado/inverso e a busca linear recursiva têm recursão de
+  profundidade n. O `Main` já executa tudo numa `Thread` com pilha de 512 MB, então não é preciso
+  passar `-Xss`. Se usar as classes fora do `Main`, rode com `-Xss512m`.
+- **Memória:** se der `OutOfMemoryError` em tamanhos grandes, rode com `-Xmx2g` (ou mais).
+- **Saída:** `resultados.csv` com as colunas
+  `tipo, algoritmo, tamanho, cenario, unidade, media, desvio_padrao, minimo, maximo`
+  (ordenação em ms; busca em µs por busca).
